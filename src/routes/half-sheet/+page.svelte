@@ -1,10 +1,49 @@
-<script>
+<script lang="ts">
   let isVisible = $state(false);
+
+  type Deferred = ReturnType<typeof deferred>;
+  function deferred() {
+    const result = {
+      resolve: () => {},
+      reject: () => {},
+      promise: Promise.resolve(),
+    };
+    result.promise = new Promise<void>((resolve, reject) => {
+      result.resolve = resolve;
+      result.reject = reject;
+    });
+    return result;
+  }
+  function wrapInViewTransition(func: () => void) {
+    if (!document.startViewTransition) {
+      func();
+    } else {
+      document.startViewTransition(async () => {
+        const def = deferred();
+        deferredItems.push(def);
+        func();
+        await def.promise;
+      });
+    }
+  }
+  function toggleVisible() {
+    wrapInViewTransition(() => {
+      isVisible = !isVisible;
+    });
+  }
+  let deferredItems: Deferred[] = [];
+  $effect(() => {
+    deferredItems.forEach((p) => {
+      p.resolve();
+    });
+    deferredItems = [];
+    isVisible;
+  });
 </script>
 
 <h1>Half Sheet demo</h1>
 
-<button on:click={() => (isVisible = !isVisible)}
+<button on:click={toggleVisible}
   >Tap this button to make the half sheet appear</button
 >
 
@@ -15,7 +54,7 @@
     class="cover"
     on:click={(e) => {
       if (e.target == e.currentTarget) {
-        isVisible = !isVisible;
+        toggleVisible();
       }
     }}
   >
@@ -24,7 +63,7 @@
         <div></div>
         <div><h3>Title</h3></div>
         <div>
-          <button on:click={() => (isVisible = !isVisible)}>Close</button>
+          <button on:click={toggleVisible}>Close</button>
         </div>
       </div>
       <div class="content">
@@ -52,14 +91,14 @@
     position: fixed;
     width: 600px;
     max-width: 100%;
-    border: 1px solid #555;
-    border-radius: 16px 16px 0 0;
   }
   @media only screen and (max-width: 600px) {
     .half-sheet {
       bottom: 0;
       left: 0;
       right: 0;
+      border-top: 1px solid #555;
+      border-radius: 16px 16px 0 0;
     }
   }
   @media only screen and (min-width: 601px) {
@@ -67,6 +106,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      border: 1px solid #555;
+      border-radius: 16px;
     }
   }
   .half-sheet-header {
