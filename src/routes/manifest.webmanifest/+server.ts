@@ -7,7 +7,7 @@ export function GET() {
     short_name: "animations-demo",
     start_url: "./",
     display: "standalone",
-    background_color: "#000000",
+    background_color: "#999999",
     lang: "en",
     scope: "./",
     icons: [
