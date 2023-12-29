@@ -1,42 +1,18 @@
 <script lang="ts">
+  import {
+    wrapInViewTransition,
+    handleViewTransition,
+  } from "$lib/view-transitions";
+
   let isVisible = $state(false);
 
-  type Deferred = ReturnType<typeof deferred>;
-  function deferred() {
-    const result = {
-      resolve: () => {},
-      reject: () => {},
-      promise: Promise.resolve(),
-    };
-    result.promise = new Promise<void>((resolve, reject) => {
-      result.resolve = resolve;
-      result.reject = reject;
-    });
-    return result;
-  }
-  function wrapInViewTransition(func: () => void) {
-    if (!document.startViewTransition) {
-      func();
-    } else {
-      document.startViewTransition(async () => {
-        const def = deferred();
-        deferredItems.push(def);
-        func();
-        await def.promise;
-      });
-    }
-  }
   function toggleVisible() {
     wrapInViewTransition(() => {
       isVisible = !isVisible;
     });
   }
-  let deferredItems: Deferred[] = [];
   $effect(() => {
-    deferredItems.forEach((p) => {
-      p.resolve();
-    });
-    deferredItems = [];
+    handleViewTransition();
     isVisible;
   });
 </script>
@@ -91,7 +67,26 @@
     position: fixed;
     width: 600px;
     max-width: 100%;
+    view-transition-name: half-sheet;
   }
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes slide-down {
+    to {
+      transform: translateY(100%);
+    }
+  }
+  /*
+  :root::view-transition-old(half-sheet) {
+    animation: 0.2s ease-in both slide-down;
+  }
+  :root::view-transition-new(half-sheet) {
+    animation: 0.2s ease-in both slide-up;
+  }
+  */
   @media only screen and (max-width: 600px) {
     .half-sheet {
       bottom: 0;
