@@ -88,8 +88,10 @@ export function proxyFetch(event: FetchEvent) {
   if (precacheRoutes.has(route)) {
     event.respondWith(handlePrefetch(event));
   } else {
-    log("unhandled route", route);
-    unhandledRoutesLog.push(route);
+    if (process.env.NODE_ENV === "production") {
+      log("unhandled route", route);
+      unhandledRoutesLog.push(route);
+    }
   }
 }
 const unhandledRoutesLog: string[] = [];
@@ -99,7 +101,7 @@ async function handlePrefetch(
 ) {
   const cache = await caches.open(cacheName);
   const match = await cache.match(url, { ignoreSearch: true });
-  if (debug && unhandledRoutesLog.length) {
+  if (unhandledRoutesLog.length) {
     log("missing:", unhandledRoutesLog);
   }
   if (match) {
